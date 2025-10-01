@@ -1,0 +1,49 @@
+import pytest
+
+from spotify_linker.services import (
+    TrackCandidate,
+    build_track_candidate,
+    extract_track_query,
+    split_artist_title,
+)
+
+
+@pytest.mark.parametrize(
+    "raw, expected",
+    [
+        ("   Song Title - Artist   ", "Song Title - Artist"),
+        ("\n\tAnother Track\n", "Another Track"),
+        ("   ", None),
+        (None, None),
+    ],
+)
+def test_extract_track_query_cleans_whitespace(raw, expected):
+    assert extract_track_query(raw) == expected
+
+
+@pytest.mark.parametrize(
+    "query, expected",
+    [
+        ("Artist - Title", ("Artist", "Title")),
+        ("Artist-Title", ("Artist", "Title")),
+        ("Artist - ", None),
+        ("SingleValue", None),
+        (None, None),
+    ],
+)
+def test_split_artist_title(query, expected):
+    assert split_artist_title(query) == expected
+
+
+def test_build_track_candidate_full_data():
+    candidate = build_track_candidate("Artist - Title")
+
+    assert isinstance(candidate, TrackCandidate)
+    assert candidate.raw_content == "Artist - Title"
+    assert candidate.query == "Artist - Title"
+    assert candidate.artist == "Artist"
+    assert candidate.title == "Title"
+
+
+def test_build_track_candidate_handles_none():
+    assert build_track_candidate(None) is None
