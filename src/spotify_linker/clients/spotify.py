@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from types import MappingProxyType
-from typing import Any, Mapping, Optional, Sequence, cast
+from typing import Any, ClassVar, Mapping, Optional, Sequence, cast
 
 import httpx
 
@@ -67,7 +67,7 @@ class SpotifyClient:
     token_url: str = "https://accounts.spotify.com/api/token"
     _token_cache: Optional[SpotifyAccessToken] = field(default=None, init=False, repr=False)
 
-    _EMPTY_MAPPING: Mapping[str, Any] = MappingProxyType({})
+    _EMPTY_MAPPING: ClassVar[Mapping[str, Any]] = MappingProxyType({})
 
     async def search_track(
         self,
