@@ -1,7 +1,8 @@
 """Telegram webhook endpoints."""
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Request, Response, status
 
+from spotify_linker.clients import SpotifyClient
 from spotify_linker.logger import get_logger
 from spotify_linker.schemas import TelegramMessage, TelegramUpdate
 from spotify_linker.services import (
@@ -16,7 +17,7 @@ logger = get_logger(__name__)
 
 
 @router.post("/telegram", status_code=status.HTTP_204_NO_CONTENT)
-async def handle_telegram_webhook(payload: TelegramUpdate) -> Response:
+async def handle_telegram_webhook(request: Request, payload: TelegramUpdate) -> Response:
     """Receive Telegram updates. Implementation will be filled in future steps."""
 
     message = extract_relevant_message(payload)
@@ -25,6 +26,12 @@ async def handle_telegram_webhook(payload: TelegramUpdate) -> Response:
         payload.update_id,
         message.message_id if message else "<none>",
     )
+    client = get_spotify_client_from_request(request)
+    if client:
+        logger.debug("Spotify client available for webhook processing")
+    else:
+        logger.debug("Spotify client unavailable; webhook will skip Spotify lookups")
+
     if message:
         content = get_message_text(message) or ""
         logger.info("Extracted message content: %s", content)
@@ -37,6 +44,8 @@ async def handle_telegram_webhook(payload: TelegramUpdate) -> Response:
                 logger.info("Parsed artist/title: %s — %s", artist, title)
         candidate = build_track_candidate(content)
         log_track_candidate(candidate)
+        if client and candidate and candidate.query:
+            await lookup_candidate_on_spotify(client, candidate)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -69,3 +78,42 @@ def log_track_candidate(candidate: TrackCandidate | None) -> None:
         candidate.artist,
         candidate.title,
     )
+
+
+async def lookup_candidate_on_spotify(client: SpotifyClient, candidate: TrackCandidate) -> None:
+    """Execute a search against Spotify for the provided candidate and log the outcome."""
+
+    query = candidate.query
+    if not query:
+        return
+
+    try:
+        summary = await client.search_track(query)
+    except Exception:  # pragma: no cover - defensive guard for unexpected API errors
+        logger.exception("Spotify lookup failed for query: %s", query)
+        return
+
+    if summary is None:
+        logger.info("No Spotify match found for query: %s", query)
+        return
+
+    artists_display = ", ".join(summary.artists) if summary.artists else "<unknown artist>"
+    logger.info(
+        "Spotify match found: %s — %s (%s)",
+        artists_display,
+        summary.name,
+        summary.external_url or "<no url>",
+    )
+
+
+def get_spotify_client_from_request(request: Request) -> SpotifyClient | None:
+    """Return the configured Spotify client from the FastAPI application state."""
+
+    spotify_client = getattr(request.app.state, "spotify_client", None)
+    if spotify_client is None:
+        return None
+    if not isinstance(spotify_client, SpotifyClient):
+        type_name = type(spotify_client).__name__
+        logger.warning("Unexpected spotify_client type on app state: %s", type_name)
+        return None
+    return spotify_client

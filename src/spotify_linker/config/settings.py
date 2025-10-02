@@ -1,10 +1,16 @@
 """Application settings loaded from environment variables."""
 
+from __future__ import annotations
+
+import os
 from functools import lru_cache
 from typing import Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+IGNORE_DOTENV_ENV_VAR = "SPOTIFY_LINKER_IGNORE_DOTENV"
 
 
 class AppSettings(BaseSettings):
@@ -24,7 +30,22 @@ class AppSettings(BaseSettings):
 
 
 @lru_cache
-def get_settings() -> AppSettings:
-    """Return a cached instance of application settings."""
+def get_settings(*, ignore_dotenv: Optional[bool] = None) -> AppSettings:
+    """Return a cached instance of application settings.
+
+    Parameters
+    ----------
+    ignore_dotenv:
+        Explicitly control whether the `.env` file should be ignored. When ``None``
+        (the default), the environment variable ``SPOTIFY_LINKER_IGNORE_DOTENV``
+        controls the behavior (case-insensitive truthy values disable the file).
+    """
+
+    if ignore_dotenv is None:
+        env_override = os.getenv(IGNORE_DOTENV_ENV_VAR, "")
+        ignore_dotenv = env_override.lower() in {"1", "true", "yes", "on"}
+
+    if ignore_dotenv:
+        return AppSettings(_env_file=None)  # type: ignore[call-arg]
 
     return AppSettings()

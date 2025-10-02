@@ -1,5 +1,3 @@
-import os
-
 import pytest
 
 from spotify_linker.config.settings import AppSettings, get_settings
@@ -18,7 +16,7 @@ def test_settings_load_from_environment(monkeypatch: pytest.MonkeyPatch) -> None
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test-token")
     monkeypatch.setenv("SPOTIFY_CLIENT_ID", "client-id")
 
-    settings = get_settings()
+    settings = get_settings(ignore_dotenv=True)
 
     assert isinstance(settings, AppSettings)
     assert settings.telegram_bot_token == "test-token"
