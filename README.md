@@ -1,5 +1,7 @@
 # Spotify Linker Bot
 
+[![CI](https://github.com/FarhadKhakzad/spotify-linker/actions/workflows/ci.yml/badge.svg)](https://github.com/FarhadKhakzad/spotify-linker/actions/workflows/ci.yml)
+
 پروژه‌ای برای خودکارسازی درج لینک اسپاتیفای در پست‌های کانال تلگرام. این مخزن قدم‌به‌قدم با ساختار حرفه‌ای پیاده‌سازی خواهد شد و شامل اجزای زیر است:
 
 - وب‌سرور سبک مبتنی بر FastAPI جهت دریافت وبهوک تلگرام.
