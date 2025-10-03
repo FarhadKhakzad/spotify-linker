@@ -252,7 +252,11 @@ class SpotifyClient:
         """Return a valid (cached) client-credentials access token."""
 
         token = self._token_cache
-        if not force_refresh and token is not None and not token.is_expired(buffer_seconds=buffer_seconds):
+        if (
+            not force_refresh
+            and token is not None
+            and not token.is_expired(buffer_seconds=buffer_seconds)
+        ):
             return token
 
         token = await self.get_client_credentials_token(http_client, timeout=timeout)

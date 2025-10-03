@@ -1,9 +1,9 @@
 from typing import Any, Dict
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi import Request
 from httpx import ASGITransport, AsyncClient
-from unittest.mock import AsyncMock, patch
 
 from spotify_linker.api.webhook import (
     extract_relevant_message,
@@ -146,7 +146,9 @@ async def test_lookup_candidate_on_spotify_logs_no_match(caplog: pytest.LogCaptu
 
 
 @pytest.mark.asyncio
-async def test_lookup_candidate_on_spotify_handles_exception(caplog: pytest.LogCaptureFixture) -> None:
+async def test_lookup_candidate_on_spotify_handles_exception(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     client = SpotifyClient(client_id="id", client_secret="secret")
     candidate = TrackCandidate(raw_content="song", query="song", artist=None, title=None)
 

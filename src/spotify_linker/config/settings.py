@@ -9,7 +9,6 @@ from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 IGNORE_DOTENV_ENV_VAR = "SPOTIFY_LINKER_IGNORE_DOTENV"
 
 
