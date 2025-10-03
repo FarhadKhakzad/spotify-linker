@@ -31,6 +31,11 @@ select = ["E", "F", "I"]
 [tool.ruff.lint.isort]
 known-first-party = ["spotify_linker"]
 
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+pythonpath = ["src"]
+testpaths = ["tests"]
+
 [build-system]
 requires = ["poetry-core>=1.7.0"]
 build-backend = "poetry.core.masonry.api"
