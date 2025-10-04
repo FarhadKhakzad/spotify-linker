@@ -9,6 +9,7 @@ from spotify_linker.api.webhook import (
     extract_relevant_message,
     get_message_text,
     get_spotify_client_from_request,
+    log_track_candidate,
     lookup_candidate_on_spotify,
 )
 from spotify_linker.clients import SpotifyClient, SpotifyTrackSummary
@@ -46,6 +47,19 @@ def test_extract_relevant_message_prefers_channel_post() -> None:
 
     assert message is not None
     assert message.message_id == 20
+
+
+def test_extract_relevant_message_returns_message_when_no_channel_post() -> None:
+    payload: dict[str, Any] = {
+        "update_id": 2,
+        "message": {"message_id": 30, "text": "only message"},
+        "channel_post": None,
+    }
+
+    message = extract_relevant_message(TelegramUpdate.model_validate(payload))
+
+    assert message is not None
+    assert message.message_id == 30
 
 
 def test_get_message_text_prefers_caption_over_text() -> None:
@@ -195,3 +209,41 @@ async def test_handle_telegram_webhook_invokes_lookup(monkeypatch: pytest.Monkey
         assert called["query"] == "Artist - Song"
     finally:
         app.state.spotify_client = original
+
+
+def test_log_track_candidate_logs_none(caplog: pytest.LogCaptureFixture) -> None:
+    with caplog.at_level("INFO"):
+        log_track_candidate(None)
+
+    assert "No track candidate" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_lookup_candidate_on_spotify_skips_empty_query() -> None:
+    client = SpotifyClient(client_id="id", client_secret="secret")
+    candidate = TrackCandidate(raw_content="data", query=None, artist=None, title=None)
+
+    with patch.object(SpotifyClient, "search_track", new_callable=AsyncMock) as mock_search:
+        await lookup_candidate_on_spotify(client, candidate)
+
+    mock_search.assert_not_called()
+
+
+def test_get_spotify_client_from_request_warns_on_wrong_type(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    original = getattr(app.state, "spotify_client", None)
+    app.state.spotify_client = "not-a-client"  # type: ignore[assignment]
+    try:
+        request = _build_request_for_app()
+        with caplog.at_level("WARNING"):
+            result = get_spotify_client_from_request(request)
+    finally:
+        if original is None:
+            if hasattr(app.state, "spotify_client"):
+                delattr(app.state, "spotify_client")
+        else:
+            app.state.spotify_client = original
+
+    assert result is None
+    assert "Unexpected spotify_client type" in caplog.text

@@ -1,11 +1,13 @@
 import base64
 from datetime import datetime, timedelta, timezone
+from types import TracebackType
 
 import httpx
 import pytest
 
 from spotify_linker.clients import (
     SpotifyAccessToken,
+    SpotifyAPIError,
     SpotifyAuthenticationError,
     SpotifyClient,
     SpotifyClientConfigError,
@@ -82,6 +84,74 @@ async def test_get_client_credentials_token_error_response() -> None:
             await client.get_client_credentials_token(http_client)
 
     assert "Bad credentials" in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_get_client_credentials_token_error_response_not_json() -> None:
+    client = SpotifyClient(client_id="bad-id", client_secret="bad-secret")
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=401, text="invalid")
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as http_client:
+        with pytest.raises(SpotifyAuthenticationError) as exc:
+            await client.get_client_credentials_token(http_client)
+
+    assert "invalid" in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_get_client_credentials_token_uses_context_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = SpotifyClient(client_id="id", client_secret="secret")
+
+    class DummyAsyncClient:
+        def __init__(self, **kwargs: object) -> None:
+            self.kwargs = kwargs
+            self.calls: list[tuple[str, dict[str, str], dict[str, str]]] = []
+
+        async def __aenter__(self) -> "DummyAsyncClient":
+            return self
+
+        async def __aexit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc: BaseException | None,
+            tb: TracebackType | None,
+        ) -> bool:
+            return False
+
+        async def post(
+            self,
+            url: str,
+            *,
+            data: dict[str, str],
+            headers: dict[str, str],
+        ) -> httpx.Response:
+            self.calls.append((url, data, headers))
+            return httpx.Response(
+                status_code=200,
+                json={"access_token": "abc", "token_type": "Bearer", "expires_in": 60},
+            )
+
+    created_clients: list[DummyAsyncClient] = []
+
+    def fake_async_client(*args: object, **kwargs: object) -> DummyAsyncClient:
+        instance = DummyAsyncClient(**kwargs)
+        created_clients.append(instance)
+        return instance
+
+    monkeypatch.setattr(httpx, "AsyncClient", fake_async_client)
+
+    token = await client.get_client_credentials_token(timeout=1.5)
+
+    assert token.access_token == "abc"
+    assert len(created_clients) == 1
+    dummy_client = created_clients[0]
+    assert dummy_client.kwargs.get("timeout") == 1.5
+    assert dummy_client.calls and dummy_client.calls[0][0] == client.token_url
 
 
 @pytest.mark.asyncio
@@ -205,5 +275,316 @@ async def test_search_track_handles_empty_results() -> None:
         result = await client.search_track("missing", http_client=http_client)
 
     assert result is None
+
+
+@pytest.mark.asyncio
+async def test_search_track_raises_api_error_with_detail() -> None:
+    client = SpotifyClient(client_id="id", client_secret="secret")
+    object.__setattr__(
+        client,
+        "_token_cache",
+        SpotifyAccessToken(
+            access_token="token",
+            token_type="Bearer",
+            expires_in=3600,
+            acquired_at=datetime.now(timezone.utc),
+        ),
+    )
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            status_code=429,
+            json={"error": {"message": "Rate limited"}},
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as http_client:
+        with pytest.raises(SpotifyAPIError) as exc:
+            await client.search_track("query", http_client=http_client)
+
+    assert "Rate limited" in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_search_track_raises_api_error_when_response_not_json() -> None:
+    client = SpotifyClient(client_id="id", client_secret="secret")
+    object.__setattr__(
+        client,
+        "_token_cache",
+        SpotifyAccessToken(
+            access_token="token",
+            token_type="Bearer",
+            expires_in=3600,
+            acquired_at=datetime.now(timezone.utc),
+        ),
+    )
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=500, text="boom")
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as http_client:
+        with pytest.raises(SpotifyAPIError) as exc:
+            await client.search_track("query", http_client=http_client)
+
+    assert "boom" in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_search_track_raises_api_error_when_error_body_not_mapping() -> None:
+    client = SpotifyClient(client_id="id", client_secret="secret")
+    object.__setattr__(
+        client,
+        "_token_cache",
+        SpotifyAccessToken(
+            access_token="token",
+            token_type="Bearer",
+            expires_in=3600,
+            acquired_at=datetime.now(timezone.utc),
+        ),
+    )
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=500, json=["unexpected"])
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as http_client:
+        with pytest.raises(SpotifyAPIError) as exc:
+            await client.search_track("query", http_client=http_client)
+
+    assert "[\"unexpected\"]" in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_search_track_raises_for_unexpected_payload_format() -> None:
+    client = SpotifyClient(client_id="id", client_secret="secret")
+    object.__setattr__(
+        client,
+        "_token_cache",
+        SpotifyAccessToken(
+            access_token="token",
+            token_type="Bearer",
+            expires_in=3600,
+            acquired_at=datetime.now(timezone.utc),
+        ),
+    )
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=200, json=["unexpected"])
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as http_client:
+        with pytest.raises(SpotifyAPIError) as exc:
+            await client.search_track("query", http_client=http_client)
+
+    assert "unexpected format" in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_search_track_returns_none_when_tracks_section_missing() -> None:
+    client = SpotifyClient(client_id="id", client_secret="secret")
+    object.__setattr__(
+        client,
+        "_token_cache",
+        SpotifyAccessToken(
+            access_token="token",
+            token_type="Bearer",
+            expires_in=3600,
+            acquired_at=datetime.now(timezone.utc),
+        ),
+    )
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=200, json={"tracks": None})
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as http_client:
+        result = await client.search_track("query", http_client=http_client)
+
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_search_track_returns_none_when_items_not_sequence() -> None:
+    client = SpotifyClient(client_id="id", client_secret="secret")
+    object.__setattr__(
+        client,
+        "_token_cache",
+        SpotifyAccessToken(
+            access_token="token",
+            token_type="Bearer",
+            expires_in=3600,
+            acquired_at=datetime.now(timezone.utc),
+        ),
+    )
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=200, json={"tracks": {"items": None}})
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as http_client:
+        result = await client.search_track("query", http_client=http_client)
+
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_search_track_returns_none_when_no_mapping_items() -> None:
+    client = SpotifyClient(client_id="id", client_secret="secret")
+    object.__setattr__(
+        client,
+        "_token_cache",
+        SpotifyAccessToken(
+            access_token="token",
+            token_type="Bearer",
+            expires_in=3600,
+            acquired_at=datetime.now(timezone.utc),
+        ),
+    )
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=200, json={"tracks": {"items": ["bad"]}})
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as http_client:
+        result = await client.search_track("query", http_client=http_client)
+
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_search_track_handles_missing_artist_and_url_fields() -> None:
+    client = SpotifyClient(client_id="id", client_secret="secret")
+    object.__setattr__(
+        client,
+        "_token_cache",
+        SpotifyAccessToken(
+            access_token="token",
+            token_type="Bearer",
+            expires_in=3600,
+            acquired_at=datetime.now(timezone.utc),
+        ),
+    )
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            status_code=200,
+            json={
+                "tracks": {
+                    "items": [
+                        {
+                            "id": 123,
+                            "name": "Track",
+                            "artists": "not-a-list",
+                            "external_urls": "not-a-mapping",
+                        }
+                    ]
+                }
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as http_client:
+        summary = await client.search_track("query", http_client=http_client)
+
+    assert isinstance(summary, SpotifyTrackSummary)
+    assert summary.artists == []
+    assert summary.external_url == ""
+
+
+@pytest.mark.asyncio
+async def test_search_track_handles_non_sequence_artists() -> None:
+    client = SpotifyClient(client_id="id", client_secret="secret")
+    object.__setattr__(
+        client,
+        "_token_cache",
+        SpotifyAccessToken(
+            access_token="token",
+            token_type="Bearer",
+            expires_in=3600,
+            acquired_at=datetime.now(timezone.utc),
+        ),
+    )
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            status_code=200,
+            json={
+                "tracks": {
+                    "items": [
+                        {
+                            "id": "track",
+                            "name": "Name",
+                            "artists": None,
+                        }
+                    ]
+                }
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as http_client:
+        summary = await client.search_track("query", http_client=http_client)
+
+    assert isinstance(summary, SpotifyTrackSummary)
+    assert summary.artists == []
+
+
+@pytest.mark.asyncio
+async def test_search_track_uses_context_client(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = SpotifyClient(client_id="id", client_secret="secret")
+    object.__setattr__(
+        client,
+        "_token_cache",
+        SpotifyAccessToken(
+            access_token="token",
+            token_type="Bearer",
+            expires_in=3600,
+            acquired_at=datetime.now(timezone.utc),
+        ),
+    )
+
+    class DummyAsyncClient:
+        def __init__(self, **kwargs: object) -> None:
+            self.kwargs = kwargs
+            self.calls: list[tuple[str, dict[str, str], dict[str, str]]] = []
+
+        async def __aenter__(self) -> "DummyAsyncClient":
+            return self
+
+        async def __aexit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc: BaseException | None,
+            tb: TracebackType | None,
+        ) -> bool:
+            return False
+
+        async def get(
+            self,
+            url: str,
+            *,
+            params: dict[str, str],
+            headers: dict[str, str],
+        ) -> httpx.Response:
+            self.calls.append((url, params, headers))
+            return httpx.Response(status_code=200, json={"tracks": {"items": []}})
+
+    created_clients: list[DummyAsyncClient] = []
+
+    def fake_async_client(*args: object, **kwargs: object) -> DummyAsyncClient:
+        instance = DummyAsyncClient(**kwargs)
+        created_clients.append(instance)
+        return instance
+
+    monkeypatch.setattr(httpx, "AsyncClient", fake_async_client)
+
+    result = await client.search_track("query", timeout=0.5)
+
+    assert result is None
+    assert len(created_clients) == 1
+    dummy_client = created_clients[0]
+    assert dummy_client.kwargs.get("timeout") == 0.5
+    assert dummy_client.calls and dummy_client.calls[0][0].endswith("/search")
 
 
