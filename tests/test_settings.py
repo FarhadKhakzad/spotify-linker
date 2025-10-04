@@ -4,9 +4,9 @@ from pathlib import Path
 import pytest
 
 from spotify_linker.config.settings import (
+    IGNORE_DOTENV_ENV_VAR,
     AppSettings,
     get_settings,
-    IGNORE_DOTENV_ENV_VAR,
 )
 
 
