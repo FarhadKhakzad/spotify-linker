@@ -18,7 +18,7 @@ Spotify Linker Bot keeps a Telegram channel in sync with Spotify by detecting tr
 ### Requirements
 
 - Python 3.11 or newer
-- [Poetry](https://python-poetry.org/) for dependency management
+- [Poetry](https://python-poetry.org/) for dependency management *(or `pip` with `requirements.txt` for a minimal setup)*
 
 ### Installation
 
@@ -27,24 +27,63 @@ poetry install
 cp env.example .env  # fill in the secrets afterwards
 ```
 
+> Prefer English copy? Use `.env.template`, which mirrors the same keys with English descriptions. Both files are interchangeable—pick whichever language you prefer.
+
+<details>
+<summary>Prefer pip over Poetry?</summary>
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate  # on Windows
+source .venv/bin/activate  # on macOS/Linux
+pip install -r requirements.txt
+# optional: pip install -r requirements-dev.txt  # tooling like pytest & ruff
+cp env.example .env
+# (alternatively) cp .env.template .env
+```
+
+</details>
+
 ### Local Development
 
 ```bash
 poetry run uvicorn spotify_linker.main:app --reload
 ```
 
+<details>
+<summary>Running without Poetry</summary>
+
+```bash
+uvicorn spotify_linker.main:app --reload
+```
+
+</details>
+
 ### Quality Gates
 
 ```bash
 poetry run ruff check .
+poetry run pylint src tests
 poetry run pytest
 ```
+
+<details>
+<summary>Commands without Poetry</summary>
+
+```bash
+# make sure requirements-dev.txt (or equivalent tools) is installed
+ruff check .
+pylint src tests
+pytest
+```
+
+</details>
 
 `pytest` is configured to emit coverage statistics so you can keep the 100 % target in sight.
 
 ## Configuration Reference
 
-Copy `env.example` to `.env` and set the following variables:
+Copy `env.example` (or `.env.template`) to `.env` and set the following variables:
 
 | Variable | Required | Description |
 | --- | --- | --- |

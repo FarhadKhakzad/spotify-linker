@@ -20,7 +20,7 @@ We expect all contributors to be respectful and collaborative. Harassment, discr
 
 ## Development Workflow
 
-- Python 3.11+ and [Poetry](https://python-poetry.org/) are required.
+- Python 3.11+ and [Poetry](https://python-poetry.org/) are the primary toolchain *(you may also rely on `pip` with `requirements.txt` if Poetry is unavailable).* 
 - Install dependencies and set up the local environment:
    ```bash
    poetry install
@@ -31,6 +31,23 @@ We expect all contributors to be respectful and collaborative. Harassment, discr
    # Windows PowerShell
    copy env.example .env
    ```
+   <details>
+   <summary>If you prefer pip</summary>
+
+   ```bash
+   python -m venv .venv
+   .venv\Scripts\activate  # Windows PowerShell
+   source .venv/bin/activate  # macOS/Linux
+   pip install -r requirements.txt
+   pip install -r requirements-dev.txt
+   copy env.example .env  # PowerShell
+   # یا روی macOS/Linux: cp env.example .env
+   # برای توضیحات انگلیسی می‌توانید از .env.template استفاده کنید
+   # For English comments: cp .env.template .env
+   ```
+
+   </details>
+
    > Fill in secrets locally; never commit `.env`.
 - Keep commits focused and written in **English, present tense** (e.g. `Add Spotify client retries`).
 - Use descriptive branch names following `feature/`, `fix/`, or `chore/` prefixes.
@@ -41,6 +58,7 @@ Before opening a pull request always run:
 
 ```bash
 poetry run ruff check .
+poetry run pylint src tests
 poetry run pytest
 ```
 
@@ -51,7 +69,7 @@ poetry run pytest
 - [ ] Rebase on top of the latest `main`.
 - [ ] Provide a clear summary of changes in English (you may add Persian notes too).
 - [ ] Include screenshots or logs for UX- or API-facing changes when relevant.
-- [ ] Confirm that `ruff` and `pytest` complete successfully.
+- [ ] Confirm that `ruff`, `pylint`, and `pytest` complete successfully.
 - [ ] Update documentation if behaviour or configuration changes (remember to touch both `README.md` and `README.fa.md` when applicable).
 
 ## Documentation & Localization

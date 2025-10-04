@@ -1,5 +1,5 @@
 """Shared Pydantic models used across the application."""
 
-from .telegram import TelegramMessage, TelegramUpdate
+from .telegram import TelegramAudio, TelegramMessage, TelegramUpdate
 
-__all__ = ["TelegramMessage", "TelegramUpdate"]
+__all__ = ["TelegramAudio", "TelegramMessage", "TelegramUpdate"]

@@ -1,10 +1,29 @@
-[tool.poetry]
+[project]
 name = "spotify-linker"
 version = "0.1.0"
 description = "Telegram bot for automatically adding Spotify links to channel posts"
-authors = ["Your Name <you@example.com>"]
-license = "MIT"
 readme = "README.md"
+license = "MIT"
+authors = [
+	{ name = "Farhad Khakzad", email = "farhadkhakzad78@gmail.com" },
+]
+requires-python = ">=3.11"
+keywords = ["telegram", "spotify", "bot", "fastapi"]
+classifiers = [
+	"Development Status :: 3 - Alpha",
+	"Intended Audience :: Developers",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.11",
+	"Framework :: FastAPI",
+]
+dynamic = ["dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/FarhadKhakzad/spotify-linker"
+Repository = "https://github.com/FarhadKhakzad/spotify-linker"
+Issues = "https://github.com/FarhadKhakzad/spotify-linker/issues"
+
+[tool.poetry]
 packages = [{ include = "spotify_linker", from = "src" }]
 
 [tool.poetry.dependencies]
@@ -21,6 +40,7 @@ pytest = "^8.3.0"
 pytest-asyncio = "^0.23.8"
 ruff = "^0.6.5"
 pytest-cov = "^7.0.0"
+pylint = "^3.3.8"
 
 [tool.ruff]
 target-version = "py311"

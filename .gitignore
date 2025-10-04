@@ -23,3 +23,7 @@ htmlcov/
 # Local environment files
 .env
 .env.*
+!.env.template
+
+# Generated reports
+*.log

@@ -47,10 +47,10 @@ async def test_get_client_credentials_token_success() -> None:
     client = SpotifyClient(client_id="spotify-id", client_secret="spotify-secret")
     expected_auth = base64.b64encode(b"spotify-id:spotify-secret").decode("ascii")
 
-    async def handler(request: httpx.Request) -> httpx.Response:
-        assert str(request.url) == client.token_url
-        assert request.headers.get("Authorization") == f"Basic {expected_auth}"
-        assert request.content.decode("utf-8") == "grant_type=client_credentials"
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        assert str(_request.url) == client.token_url
+        assert _request.headers.get("Authorization") == f"Basic {expected_auth}"
+        assert _request.content.decode("utf-8") == "grant_type=client_credentials"
 
         return httpx.Response(
             status_code=200,
@@ -72,7 +72,7 @@ async def test_get_client_credentials_token_success() -> None:
 async def test_get_client_credentials_token_error_response() -> None:
     client = SpotifyClient(client_id="bad-id", client_secret="bad-secret")
 
-    async def handler(request: httpx.Request) -> httpx.Response:
+    async def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(
             status_code=400,
             json={"error": "invalid_client", "error_description": "Bad credentials"},
@@ -90,7 +90,7 @@ async def test_get_client_credentials_token_error_response() -> None:
 async def test_get_client_credentials_token_error_response_not_json() -> None:
     client = SpotifyClient(client_id="bad-id", client_secret="bad-secret")
 
-    async def handler(request: httpx.Request) -> httpx.Response:
+    async def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(status_code=401, text="invalid")
 
     transport = httpx.MockTransport(handler)
@@ -138,7 +138,7 @@ async def test_get_client_credentials_token_uses_context_client(
 
     created_clients: list[DummyAsyncClient] = []
 
-    def fake_async_client(*args: object, **kwargs: object) -> DummyAsyncClient:
+    def fake_async_client(*_args: object, **kwargs: object) -> DummyAsyncClient:
         instance = DummyAsyncClient(**kwargs)
         created_clients.append(instance)
         return instance
@@ -195,7 +195,7 @@ async def test_get_access_token_refreshes_when_expired() -> None:
     object.__setattr__(client, "_token_cache", expired_token)
     call_count = 0
 
-    async def handler(request: httpx.Request) -> httpx.Response:
+    async def handler(_request: httpx.Request) -> httpx.Response:
         nonlocal call_count
         call_count += 1
         return httpx.Response(
@@ -572,7 +572,7 @@ async def test_search_track_uses_context_client(monkeypatch: pytest.MonkeyPatch)
 
     created_clients: list[DummyAsyncClient] = []
 
-    def fake_async_client(*args: object, **kwargs: object) -> DummyAsyncClient:
+    def fake_async_client(*_args: object, **kwargs: object) -> DummyAsyncClient:
         instance = DummyAsyncClient(**kwargs)
         created_clients.append(instance)
         return instance
@@ -586,5 +586,3 @@ async def test_search_track_uses_context_client(monkeypatch: pytest.MonkeyPatch)
     dummy_client = created_clients[0]
     assert dummy_client.kwargs.get("timeout") == 0.5
     assert dummy_client.calls and dummy_client.calls[0][0].endswith("/search")
-
-

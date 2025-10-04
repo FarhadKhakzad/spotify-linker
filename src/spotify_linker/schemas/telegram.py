@@ -14,6 +14,14 @@ class TelegramChat(BaseModel):
     type: Optional[str] = None
 
 
+class TelegramAudio(BaseModel):
+    """Subset of Telegram audio metadata used for track extraction."""
+
+    performer: Optional[str] = None
+    title: Optional[str] = None
+    file_name: Optional[str] = None
+
+
 class TelegramMessage(BaseModel):
     """Subset of Telegram message fields needed for the project."""
 
@@ -22,6 +30,7 @@ class TelegramMessage(BaseModel):
     caption: Optional[str] = None
     date: Optional[int] = None
     chat: Optional[TelegramChat] = None
+    audio: Optional[TelegramAudio] = None
 
 
 class TelegramUpdate(BaseModel):

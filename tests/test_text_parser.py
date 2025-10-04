@@ -14,7 +14,13 @@ from spotify_linker.services import (
         ("   Song Title - Artist   ", "Song Title - Artist"),
         ("\n\tAnother Track\n", "Another Track"),
         ("Line one\n\nLine\ttwo", "Line one Line two"),
-    ("Ａｒｔｉｓｔ － Ｔｉｔｌｅ", "Artist - Title"),
+        ("Ａｒｔｉｓｔ － Ｔｉｔｌｅ", "Artist - Title"),
+        ("Artist – Title", "Artist - Title"),
+        ('"Quote"', "Quote"),
+        (' " Song " ', "Song"),
+        ("“Curly Track”", "Curly Track"),
+        ("『タイトル』", "タイトル"),
+        ("''", None),
         ("   ", None),
         (None, None),
     ],
@@ -62,6 +68,15 @@ def test_build_track_candidate_skips_blank_messages() -> None:
 
 def test_build_track_candidate_handles_fullwidth_unicode() -> None:
     candidate = build_track_candidate("Ａｒｔｉｓｔ － Ｔｉｔｌｅ")
+
+    assert candidate is not None
+    assert candidate.query == "Artist - Title"
+    assert candidate.artist == "Artist"
+    assert candidate.title == "Title"
+
+
+def test_build_track_candidate_strips_wrapping_quotes() -> None:
+    candidate = build_track_candidate('"Artist - Title"')
 
     assert candidate is not None
     assert candidate.query == "Artist - Title"

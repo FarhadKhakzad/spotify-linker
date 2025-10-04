@@ -1,26 +1,22 @@
 """Logging utilities for the Spotify Linker bot."""
 
 import logging
-from typing import Optional
-
-_LOGGING_CONFIGURED = False
 
 
 def configure_logging(level: int = logging.INFO) -> None:
-    """Configure the root logger once with a consistent format."""
+    """Configure the root logger with a consistent format if unset."""
 
-    global _LOGGING_CONFIGURED
-    if _LOGGING_CONFIGURED:
-        return
+    root_logger = logging.getLogger()
+    if not root_logger.handlers:
+        logging.basicConfig(
+            level=level,
+            format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+        )
 
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-    )
-    _LOGGING_CONFIGURED = True
+    root_logger.setLevel(level)
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str | None = None) -> logging.Logger:
     """Return a logger with the default configuration applied."""
 
     configure_logging()

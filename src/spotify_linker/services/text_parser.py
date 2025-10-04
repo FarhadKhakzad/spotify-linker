@@ -5,6 +5,12 @@ import unicodedata
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
+# Collection of leading/trailing quotation marks we want to ignore when normalizing queries.
+_QUOTE_CHARACTERS = "\"'`ʼʹʺ“”„‟‹›«»‚‘’『』「」"
+
+# Map common dash variants to the ASCII hyphen for consistent Spotify queries.
+_DASH_TRANSLATION = str.maketrans({"–": "-", "—": "-", "−": "-"})
+
 
 def extract_track_query(content: Optional[str]) -> Optional[str]:
     """Return a cleaned search query candidate from raw message content."""
@@ -18,6 +24,9 @@ def extract_track_query(content: Optional[str]) -> Optional[str]:
         return None
 
     normalized = re.sub(r"\s+", " ", cleaned)
+    normalized = normalized.translate(_DASH_TRANSLATION)
+    normalized = normalized.strip(_QUOTE_CHARACTERS)
+    normalized = normalized.strip()
     return normalized or None
 
 

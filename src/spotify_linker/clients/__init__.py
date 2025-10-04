@@ -9,6 +9,7 @@ from .spotify import (
     SpotifyTrackSummary,
     build_spotify_client,
 )
+from .telegram import TelegramAPIError, TelegramClient
 
 __all__ = [
     "SpotifyAPIError",
@@ -18,4 +19,6 @@ __all__ = [
     "SpotifyClientConfigError",
     "SpotifyTrackSummary",
     "build_spotify_client",
+    "TelegramAPIError",
+    "TelegramClient",
 ]

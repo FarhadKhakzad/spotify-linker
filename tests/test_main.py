@@ -1,31 +1,30 @@
 import logging
 from pathlib import Path
-from typing import cast
 
 import pytest
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from pytest import LogCaptureFixture, MonkeyPatch
 
-from spotify_linker.clients import SpotifyClient
+from spotify_linker.clients import SpotifyClient, TelegramClient
 from spotify_linker.config.settings import AppSettings, get_settings
 from spotify_linker.main import lifespan, validate_critical_settings
 
 
-def test_lifespan_initializes_spotify_client(monkeypatch: MonkeyPatch) -> None:
+@pytest.mark.asyncio
+async def test_lifespan_initializes_spotify_client(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("SPOTIFY_LINKER_IGNORE_DOTENV", "1")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "bot-token")
+    monkeypatch.setenv("TELEGRAM_CHANNEL_ID", "channel")
     monkeypatch.setenv("SPOTIFY_CLIENT_ID", "client-id")
     monkeypatch.setenv("SPOTIFY_CLIENT_SECRET", "client-secret")
 
     get_settings.cache_clear()  # type: ignore[attr-defined]
 
-    # Import here so settings read the monkeypatched environment.
-    from spotify_linker.main import app
+    app_instance = FastAPI()
 
-    with TestClient(app) as client:
-        app_instance = cast(FastAPI, client.app)
+    async with lifespan(app_instance):
         assert isinstance(app_instance.state.spotify_client, SpotifyClient)
+        assert isinstance(app_instance.state.telegram_client, TelegramClient)
 
     get_settings.cache_clear()  # type: ignore[attr-defined]
 
@@ -36,6 +35,7 @@ async def test_lifespan_handles_missing_credentials(monkeypatch: MonkeyPatch) ->
     monkeypatch.delenv("SPOTIFY_CLIENT_ID", raising=False)
     monkeypatch.delenv("SPOTIFY_CLIENT_SECRET", raising=False)
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
+    monkeypatch.setenv("TELEGRAM_CHANNEL_ID", "channel")
 
     get_settings.cache_clear()  # type: ignore[attr-defined]
 
@@ -43,6 +43,24 @@ async def test_lifespan_handles_missing_credentials(monkeypatch: MonkeyPatch) ->
 
     async with lifespan(app):
         assert getattr(app.state, "spotify_client", None) is None
+
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+
+
+@pytest.mark.asyncio
+async def test_lifespan_handles_missing_telegram_credentials(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setenv("SPOTIFY_LINKER_IGNORE_DOTENV", "1")
+    monkeypatch.setenv("SPOTIFY_CLIENT_ID", "client-id")
+    monkeypatch.setenv("SPOTIFY_CLIENT_SECRET", "client-secret")
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("TELEGRAM_CHANNEL_ID", raising=False)
+
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+
+    app = FastAPI()
+
+    async with lifespan(app):
+        assert getattr(app.state, "telegram_client", None) is None
 
     get_settings.cache_clear()  # type: ignore[attr-defined]
 
@@ -81,6 +99,7 @@ def test_validate_critical_settings_logs_all_present(caplog: LogCaptureFixture) 
     settings = AppSettings.model_validate(
         {
             "TELEGRAM_BOT_TOKEN": "token",
+            "TELEGRAM_CHANNEL_ID": "channel",
             "SPOTIFY_CLIENT_ID": "id",
             "SPOTIFY_CLIENT_SECRET": "secret",
         }

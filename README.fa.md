@@ -18,7 +18,7 @@
 ### پیش‌نیازها
 
 - پایتون ۳٫۱۱ یا جدیدتر
-- ابزار [Poetry](https://python-poetry.org/) برای مدیریت وابستگی‌ها
+- ابزار [Poetry](https://python-poetry.org/) برای مدیریت وابستگی‌ها *(یا استفاده از `pip` و فایل `requirements.txt` برای نصب ساده)*
 
 ### نصب
 
@@ -27,24 +27,63 @@ poetry install
 cp env.example .env  # پس از کپی، مقادیر را تکمیل کنید
 ```
 
+> اگر توضیحات انگلیسی را ترجیح می‌دهید، فایل `.env.template` همان مقادیر را با توضیحات انگلیسی فراهم می‌کند.
+
+<details>
+<summary>در صورت تمایل به استفاده از pip</summary>
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate  # روی ویندوز
+source .venv/bin/activate  # روی macOS/Linux
+pip install -r requirements.txt
+# برای ابزارهای توسعه: pip install -r requirements-dev.txt
+cp env.example .env
+# یا cp .env.template .env
+```
+
+</details>
+
 ### اجرای محیط توسعه
 
 ```bash
 poetry run uvicorn spotify_linker.main:app --reload
 ```
 
+<details>
+<summary>در صورت عدم استفاده از Poetry</summary>
+
+```bash
+uvicorn spotify_linker.main:app --reload
+```
+
+</details>
+
 ### کنترل کیفیت
 
 ```bash
 poetry run ruff check .
+poetry run pylint src tests
 poetry run pytest
 ```
+
+<details>
+<summary>بدون Poetry</summary>
+
+```bash
+# مطمئن شوید بسته‌های requirements-dev.txt نصب شده‌اند
+ruff check .
+pylint src tests
+pytest
+```
+
+</details>
 
 دستور `pytest` به‌صورت خودکار گزارش پوشش کد تولید می‌کند تا اطمینان بگیرید استاندارد ۱۰۰٪ حفظ شده است.
 
 ## راهنمای پیکربندی
 
-از فایل نمونهٔ `env.example` یک نسخهٔ `.env` بسازید و متغیرهای زیر را مقداردهی کنید:
+از فایل نمونهٔ `env.example` یا `.env.template` یک نسخهٔ `.env` بسازید و متغیرهای زیر را مقداردهی کنید:
 
 | متغیر | ضروری؟ | توضیح |
 | --- | --- | --- |

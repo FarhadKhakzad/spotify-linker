@@ -1,0 +1,8 @@
+# Development-only dependencies for pip workflows.
+# Keep versions aligned with pyproject.toml's tooling section.
+-r requirements.txt
+pytest==8.3.0
+pytest-asyncio==0.23.8
+pytest-cov==7.0.0
+pylint==3.3.8
+ruff==0.6.5

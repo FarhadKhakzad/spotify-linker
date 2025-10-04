@@ -1,0 +1,49 @@
+[MASTER]
+ignore=__pycache__,.venv
+ignore-patterns=^\.git$,^\.mypy_cache$
+load-plugins=pylint.extensions.docstyle
+
+[MESSAGES CONTROL]
+disable=
+    C0114,
+    C0115,
+    C0116,
+    R0903,
+    R0913,
+    R0917,
+    R0801,
+    W0511,
+    W1203,
+    W0718,
+    R0912,
+    W0621
+
+[FORMAT]
+max-line-length=100
+indent-string='    '
+
+[TYPECHECK]
+ignored-modules=httpx,spotipy,pytest
+ignored-classes=AsyncMock
+
+generated-members=requests.sessions.Session
+
+[SIMILARITIES]
+min-similarity-lines=4
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=yes
+
+[BASIC]
+good-names=i,j,k,ex,Run,_,id
+
+[DESIGN]
+max-args=6
+max-attributes=10
+max-branches=20
+max-locals=28
+max-returns=6
+max-statements=80
+
+[REPORTS]
+score=yes

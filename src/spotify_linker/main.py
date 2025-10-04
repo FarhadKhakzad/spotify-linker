@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from spotify_linker.api import webhook_router
-from spotify_linker.clients import build_spotify_client
+from spotify_linker.clients import TelegramClient, build_spotify_client
 from spotify_linker.config.settings import AppSettings, get_settings
 from spotify_linker.logger import get_logger
 
@@ -28,10 +28,23 @@ async def lifespan(app: FastAPI):
         app.state.spotify_client = None
         logger.info("Spotify client not initialized due to missing credentials")
 
+    telegram_client = None
+    if settings.telegram_bot_token and settings.telegram_channel_id:
+        telegram_client = TelegramClient(
+            bot_token=settings.telegram_bot_token,
+            channel_id=settings.telegram_channel_id,
+        )
+        app.state.telegram_client = telegram_client
+        logger.info("Telegram client initialized for channel %s", settings.telegram_channel_id)
+    else:
+        app.state.telegram_client = None
+        logger.info("Telegram client not initialized due to missing token or channel id")
+
     try:
         yield
     finally:
         app.state.spotify_client = None
+        app.state.telegram_client = None
         logger.info("Spotify Linker service is shutting down")
 
 
@@ -52,6 +65,8 @@ def validate_critical_settings(settings: AppSettings) -> None:
     missing: list[str] = []
     if not settings.telegram_bot_token:
         missing.append("TELEGRAM_BOT_TOKEN")
+    if not settings.telegram_channel_id:
+        missing.append("TELEGRAM_CHANNEL_ID")
     if not settings.spotify_client_id:
         missing.append("SPOTIFY_CLIENT_ID")
     if not settings.spotify_client_secret:
