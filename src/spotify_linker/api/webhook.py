@@ -8,8 +8,6 @@ from spotify_linker.schemas import TelegramMessage, TelegramUpdate
 from spotify_linker.services import (
     TrackCandidate,
     build_track_candidate,
-    extract_track_query,
-    split_artist_title,
 )
 
 router = APIRouter(prefix="/webhook", tags=["webhook"])
@@ -33,17 +31,17 @@ async def handle_telegram_webhook(request: Request, payload: TelegramUpdate) -> 
         logger.debug("Spotify client unavailable; webhook will skip Spotify lookups")
 
     if message:
-        content = get_message_text(message) or ""
-        logger.info("Extracted message content: %s", content)
-        query = extract_track_query(content)
-        if query:
-            logger.info("Normalized track query: %s", query)
-            split = split_artist_title(query)
-            if split:
-                artist, title = split
-                logger.info("Parsed artist/title: %s — %s", artist, title)
-        candidate = build_track_candidate(content)
+        raw_content = get_message_text(message)
+        logger.info("Extracted message content: %s", raw_content or "")
+
+        candidate = build_track_candidate(raw_content)
+        if candidate and candidate.query:
+            logger.info("Normalized track query: %s", candidate.query)
+            if candidate.artist and candidate.title:
+                logger.info("Parsed artist/title: %s — %s", candidate.artist, candidate.title)
+
         log_track_candidate(candidate)
+
         if client and candidate and candidate.query:
             await lookup_candidate_on_spotify(client, candidate)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
