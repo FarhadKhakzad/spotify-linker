@@ -50,7 +50,10 @@ def build_track_candidate(content: Optional[str]) -> Optional[TrackCandidate]:
         return None
 
     query = extract_track_query(content)
-    artist_title = split_artist_title(query) if query else None
+    if query is None:
+        return None
+
+    artist_title = split_artist_title(query)
     artist, title = artist_title if artist_title else (None, None)
 
     return TrackCandidate(

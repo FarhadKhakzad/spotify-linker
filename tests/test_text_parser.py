@@ -17,7 +17,9 @@ from spotify_linker.services import (
         (None, None),
     ],
 )
-def test_extract_track_query_cleans_whitespace(raw, expected):
+def test_extract_track_query_cleans_whitespace(
+    raw: str | None, expected: str | None
+) -> None:
     assert extract_track_query(raw) == expected
 
 
@@ -31,11 +33,13 @@ def test_extract_track_query_cleans_whitespace(raw, expected):
         (None, None),
     ],
 )
-def test_split_artist_title(query, expected):
+def test_split_artist_title(
+    query: str | None, expected: tuple[str, str] | None
+) -> None:
     assert split_artist_title(query) == expected
 
 
-def test_build_track_candidate_full_data():
+def test_build_track_candidate_full_data() -> None:
     candidate = build_track_candidate("Artist - Title")
 
     assert isinstance(candidate, TrackCandidate)
@@ -45,5 +49,9 @@ def test_build_track_candidate_full_data():
     assert candidate.title == "Title"
 
 
-def test_build_track_candidate_handles_none():
+def test_build_track_candidate_handles_none() -> None:
     assert build_track_candidate(None) is None
+
+
+def test_build_track_candidate_skips_blank_messages() -> None:
+    assert build_track_candidate("   ") is None
