@@ -14,6 +14,7 @@ from spotify_linker.services import (
         ("   Song Title - Artist   ", "Song Title - Artist"),
         ("\n\tAnother Track\n", "Another Track"),
         ("Line one\n\nLine\ttwo", "Line one Line two"),
+    ("Ａｒｔｉｓｔ － Ｔｉｔｌｅ", "Artist - Title"),
         ("   ", None),
         (None, None),
     ],
@@ -57,3 +58,12 @@ def test_build_track_candidate_handles_none() -> None:
 
 def test_build_track_candidate_skips_blank_messages() -> None:
     assert build_track_candidate("   ") is None
+
+
+def test_build_track_candidate_handles_fullwidth_unicode() -> None:
+    candidate = build_track_candidate("Ａｒｔｉｓｔ － Ｔｉｔｌｅ")
+
+    assert candidate is not None
+    assert candidate.query == "Artist - Title"
+    assert candidate.artist == "Artist"
+    assert candidate.title == "Title"

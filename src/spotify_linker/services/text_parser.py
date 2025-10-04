@@ -1,6 +1,7 @@
 """Utilities for extracting track queries from Telegram messages."""
 
 import re
+import unicodedata
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
@@ -11,7 +12,8 @@ def extract_track_query(content: Optional[str]) -> Optional[str]:
     if content is None:
         return None
 
-    cleaned = content.strip()
+    normalized_input = unicodedata.normalize("NFKC", content)
+    cleaned = normalized_input.strip()
     if not cleaned:
         return None
 
