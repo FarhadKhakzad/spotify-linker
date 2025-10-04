@@ -2,69 +2,79 @@
 
 [![CI](https://github.com/FarhadKhakzad/spotify-linker/actions/workflows/ci.yml/badge.svg)](https://github.com/FarhadKhakzad/spotify-linker/actions/workflows/ci.yml)
 
-پروژه‌ای برای خودکارسازی درج لینک اسپاتیفای در پست‌های کانال تلگرام. این مخزن قدم‌به‌قدم با ساختار حرفه‌ای پیاده‌سازی خواهد شد و شامل اجزای زیر است:
+> Available in: [English](README.md) · [فارسی](README.fa.md)
 
-- وب‌سرور سبک مبتنی بر FastAPI جهت دریافت وبهوک تلگرام.
-- ماژول اتصال به API اسپاتیفای برای جست‌وجوی دقیق آهنگ‌ها.
-- لایه مدیریت کانفیگ و متغیرهای محیطی جهت نگه‌داری امن کلیدها و توکن‌ها.
-- تست‌های خودکار برای اطمینان از صحت عملکرد بخش‌های کلیدی.
+Spotify Linker Bot keeps a Telegram channel in sync with Spotify by detecting track mentions and replying with the matching Spotify link. The project is being built step-by-step with production-friendly tooling.
 
-## شروع سریع
+## Key Capabilities
 
-1. اطمینان از نصب Python نسخه 3.11 به بالا.
-2. ساخت محیط مجازی و نصب وابستگی‌ها پس از تعریف در فایل `pyproject.toml` (در مراحل بعد تکمیل می‌شود).
+- FastAPI application that exposes a Telegram webhook endpoint.
+- Spotify Web API client that performs robust track searches.
+- Configuration layer powered by Pydantic Settings with dotenv support.
+- Comprehensive automated tests (async-friendly, 100% coverage) and CI via GitHub Actions.
+
+## Quick Start
+
+### Requirements
+
+- Python 3.11 or newer
+- [Poetry](https://python-poetry.org/) for dependency management
+
+### Installation
 
 ```bash
 poetry install
+cp env.example .env  # fill in the secrets afterwards
 ```
-3. یک نسخه از `env.example` بسازید و مقادیر را در `.env` قرار دهید تا تنظیمات بارگذاری شود.
-4. اجرای اسکریپت توسعه محلی جهت دریافت وبهوک آزمایشی و بررسی لاگ‌ها.
-5. برای اجرای سرویس در حالت توسعه، دستور زیر را اجرا کنید:
+
+### Local Development
 
 ```bash
 poetry run uvicorn spotify_linker.main:app --reload
 ```
 
-6. برای بررسی استانداردهای کدنویسی و تست‌ها پیش از ارسال تغییرات، ابتدا وابستگی‌ها را به‌روزرسانی کنید:
-
-```bash
-poetry update
-```
-
-7. سپس کیفیت کد و تست‌ها را با اجرای دستورهای زیر بسنجید:
+### Quality Gates
 
 ```bash
 poetry run ruff check .
 poetry run pytest
 ```
 
-اجرای pytest حالا به‌طور خودکار گزارش پوشش کد (`coverage`) را نیز تولید می‌کند تا مطمئن شوید بخش‌های اصلی پروژه در تست‌ها پوشش داده شده‌اند.
+`pytest` is configured to emit coverage statistics so you can keep the 100 % target in sight.
 
-## نقشه راه
+## Configuration Reference
 
-این پروژه در چند فاز کوچک توسعه خواهد یافت:
+Copy `env.example` to `.env` and set the following variables:
 
-1. ایجاد ساختار اولیه و تنظیمات پایه (در حال انجام).
-2. پیاده‌سازی endpoint وبهوک و زیرساخت لاگ‌گیری.
-3. اتصال به اسپاتیفای با استفاده از Client Credentials.
-4. تحلیل پیام‌های دریافتی و استخراج متادیتای آهنگ.
-5. یافتن لینک دقیق اسپاتیفای و پاسخ‌دهی به تلگرام.
-6. استقرار روی سرور همیشه روشن و پیکربندی HTTPS/Webhook.
+| Variable | Required | Description |
+| --- | --- | --- |
+| `TELEGRAM_BOT_TOKEN` | ✅ | Bot token issued by BotFather. |
+| `TELEGRAM_CHANNEL_ID` | ✅ | Numeric channel identifier (negative for channels). |
+| `SPOTIFY_CLIENT_ID` | ✅ | Application client ID from the Spotify Developer Dashboard. |
+| `SPOTIFY_CLIENT_SECRET` | ✅ | Client secret used during the client-credentials flow. |
+| `SPOTIFY_REDIRECT_URI` | ➖ | Reserved for future OAuth scenarios. |
 
-## مدیریت رازها
+> **Security tip:** never commit `.env` or real credentials. Use password managers or your hosting platform’s secret store.
 
-> ⚠️ **هشدار امنیتی:** فایل `.env` هرگز نباید در مخزن یا اشتراک‌گذاری‌های عمومی قرار بگیرد. برای نگه‌داری امن از ابزارهایی مانند مدیر رمز عبور یا مخزن secrets استفاده کنید.
+## Roadmap
 
-توکن ربات تلگرام و اطلاعات کلاینت اسپاتیفای در فایل `.env` قرار خواهند گرفت. متغیرهای حیاتی شامل `TELEGRAM_BOT_TOKEN`، `TELEGRAM_CHANNEL_ID`، `SPOTIFY_CLIENT_ID` و `SPOTIFY_CLIENT_SECRET` هستند. فایل نمونه `env.example` نحوه مقداردهی را نشان می‌دهد. این فایل‌ها نباید در مخزن عمومی منتشر شوند.
+1. ✅ Project scaffolding, settings management, CI + linting.
+2. ✅ Telegram webhook endpoint and logging.
+3. ✅ Spotify client with client-credentials token handling.
+4. ✅ Parsing Telegram messages into normalized track candidates.
+5. ✅ High-fidelity Spotify search and response formatting.
+6. ⏭ Deployment automation and HTTPS webhook configuration.
 
-| متغیر | ضروری؟ | توضیح |
-|-------|---------|-------|
-| `TELEGRAM_BOT_TOKEN` | بله | توکن دسترسی ربات تلگرام ایجاد شده توسط BotFather. |
-| `TELEGRAM_CHANNEL_ID` | بله | شناسه عددی کانالی که بات در آن عضو است (با پیشوند منفی برای کانال‌ها). |
-| `SPOTIFY_CLIENT_ID` | بله | شناسهٔ برنامه در داشبورد توسعه‌دهندگان اسپاتیفای. |
-| `SPOTIFY_CLIENT_SECRET` | بله | کلید محرمانهٔ اسپاتیفای که برای دریافت توکن استفاده می‌شود. |
-| `SPOTIFY_REDIRECT_URI` | اختیاری | مسیر بازگشتی ثبت‌شده در اسپاتیفای؛ برای سناریوهای OAuth آینده نگه داشته می‌شود. |
+## Contributing
 
-## مشارکت
+Contributions are welcome! Please:
 
-تمام تغییرات جدید ابتدا با تأیید صاحب پروژه انجام می‌شوند. برای پیشنهاد تغییر، ابتدا یک شاخه جدید بسازید و پس از بررسی تست‌ها، درخواست ادغام ارسال کنید.
+1. Fork the repository and create a feature branch.
+2. Run the quality gates (`ruff`, `pytest`, coverage).
+3. Open a pull request that explains the change in English (feel free to add Persian notes as well).
+
+For Persian-speaking contributors a localized quick reference is available in [README.fa.md](README.fa.md).
+
+## License
+
+This project is released under the MIT License. See [`LICENSE`](LICENSE) for details.
