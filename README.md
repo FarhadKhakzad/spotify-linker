@@ -67,11 +67,7 @@ Copy `env.example` to `.env` and set the following variables:
 
 ## Contributing
 
-Contributions are welcome! Please:
-
-1. Fork the repository and create a feature branch.
-2. Run the quality gates (`ruff`, `pytest`, coverage).
-3. Open a pull request that explains the change in English (feel free to add Persian notes as well).
+We welcome contributions! Please read the full workflow in [CONTRIBUTING.md](CONTRIBUTING.md). It covers branching, quality checks, commit style, and the bilingual documentation policy.
 
 For Persian-speaking contributors a localized quick reference is available in [README.fa.md](README.fa.md).
 
