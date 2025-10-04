@@ -12,7 +12,11 @@ def extract_track_query(content: Optional[str]) -> Optional[str]:
         return None
 
     cleaned = content.strip()
-    return cleaned or None
+    if not cleaned:
+        return None
+
+    normalized = re.sub(r"\s+", " ", cleaned)
+    return normalized or None
 
 
 _ARTIST_TITLE_PATTERN = re.compile(r"\s*-\s*")

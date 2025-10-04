@@ -13,6 +13,7 @@ from spotify_linker.services import (
     [
         ("   Song Title - Artist   ", "Song Title - Artist"),
         ("\n\tAnother Track\n", "Another Track"),
+        ("Line one\n\nLine\ttwo", "Line one Line two"),
         ("   ", None),
         (None, None),
     ],
