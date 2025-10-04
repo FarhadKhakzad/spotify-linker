@@ -3,7 +3,11 @@ from pathlib import Path
 
 import pytest
 
-from spotify_linker.config.settings import AppSettings, IGNORE_DOTENV_ENV_VAR, get_settings
+from spotify_linker.config.settings import (
+    AppSettings,
+    get_settings,
+    IGNORE_DOTENV_ENV_VAR,
+)
 
 
 @pytest.fixture(autouse=True)
