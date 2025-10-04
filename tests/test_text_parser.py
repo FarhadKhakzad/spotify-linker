@@ -29,6 +29,7 @@ def test_extract_track_query_cleans_whitespace(
     [
         ("Artist - Title", ("Artist", "Title")),
         ("Artist-Title", ("Artist", "Title")),
+        ("Artist – Title", ("Artist", "Title")),
         ("Artist - ", None),
         ("SingleValue", None),
         (None, None),

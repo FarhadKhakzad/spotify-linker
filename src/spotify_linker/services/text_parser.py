@@ -19,7 +19,7 @@ def extract_track_query(content: Optional[str]) -> Optional[str]:
     return normalized or None
 
 
-_ARTIST_TITLE_PATTERN = re.compile(r"\s*-\s*")
+_ARTIST_TITLE_PATTERN = re.compile(r"\s*[-–—]\s*")
 
 
 def split_artist_title(query: Optional[str]) -> Optional[Tuple[str, str]]:
